@@ -1,6 +1,7 @@
 package mut
 
 import (
+	"reflect"
 	"sync"
 	"testing"
 )
@@ -120,5 +121,27 @@ func TestTryConcurrentAccess(t *testing.T) {
 
 	if m.V.V != 2 {
 		t.Fatalf("unexpected value: got %v, want 1", *m.V)
+	}
+}
+
+func TestMutMap(t *testing.T) {
+	type u struct {
+		username string
+	}
+	hmap := make(map[int]*Mutable[u])
+
+	user := u{"nickname"}
+	hmap[1] = New(&user)
+
+	mutable, ok := hmap[1]
+	if !ok {
+		t.Fatalf("not found 1")
+	}
+	mutedUser := mutable.Mut()
+	mutedUser.username += ":suffix"
+	mutable.Unmute()
+
+	if !reflect.DeepEqual(user, *mutable.V) || &user != mutable.V || user.username != "nickname:suffix" {
+		t.Fatalf("not equal values user %v, val %v ,want {\"nickname:suffix\"}", user, mutable.V)
 	}
 }
